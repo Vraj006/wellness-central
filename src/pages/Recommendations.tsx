@@ -1,31 +1,64 @@
-import { Sidebar } from "@/components/Sidebar";
-import { RecommendationCard } from "@/components/RecommendationCard";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { api } from "@/convex/_generated/api";
-import { useAuth } from "@/hooks/use-auth";
-import { useQuery } from "convex/react";
+// src/pages/recommendations.tsx
+"use client";
+
+import { useState } from "react";
+import { useRecommendation } from "@/hooks/useRecommendation";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 export default function RecommendationsPage() {
-  const { user, isLoading } = useAuth();
-  const recommendations = useQuery(api.recommendations.getUserRecommendations, !isLoading && user ? {} : "skip");
+  const [form, setForm] = useState({
+    HR: 72,
+    weight: 70,
+    bmi: 22.5,
+    exercise: 150,
+    sleep: 7,
+    diet: "balanced",
+    stress: 5,
+    steps: 8000,
+    airquality: "good",
+  });
+
+  const { getRecommendation, recommendation, loading } = useRecommendation();
+
+  const handleChange = (field: string, value: any) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  };
 
   return (
-    <div className="flex h-screen bg-background">
-      <Sidebar className="w-64 hidden lg:block" />
-      <main className="flex-1 overflow-auto">
-        <div className="p-6 max-w-4xl mx-auto space-y-6">
-          <h1 className="text-2xl font-bold">Recommendations</h1>
-          {recommendations && recommendations.length > 0 ? (
-            <div className="space-y-4">
-              {recommendations.map((rec) => (
-                <RecommendationCard key={rec._id} recommendation={rec} />
-              ))}
+    <div className="p-6 max-w-2xl mx-auto space-y-6">
+      <h1 className="text-2xl font-bold">AI Health Recommendations</h1>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Input Your Data</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {Object.keys(form).map((key) => (
+            <div key={key} className="flex justify-between items-center">
+              <label className="capitalize">{key}</label>
+              <input
+                type="text"
+                className="border p-1 rounded"
+                value={form[key as keyof typeof form]}
+                onChange={(e) => handleChange(key, e.target.value)}
+              />
             </div>
-          ) : (
-            <Card><CardHeader><CardTitle>No recommendations</CardTitle></CardHeader><CardContent>Check back later.</CardContent></Card>
-          )}
-        </div>
-      </main>
+          ))}
+          <Button onClick={() => getRecommendation(form)} disabled={loading}>
+            {loading ? "Loading..." : "Get Recommendation"}
+          </Button>
+        </CardContent>
+      </Card>
+
+      {recommendation && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Your Recommendation</CardTitle>
+          </CardHeader>
+          <CardContent>{recommendation}</CardContent>
+        </Card>
+      )}
     </div>
   );
 }
