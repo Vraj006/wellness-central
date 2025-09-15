@@ -64,7 +64,24 @@ export default function Landing() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+    <div className="relative min-h-screen bg-gradient-to-br from-background via-background to-muted/20 overflow-hidden">
+      {/* Animated background decorations */}
+      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+        <motion.div
+          initial={{ opacity: 0, x: -40, y: -40 }}
+          animate={{ opacity: 1, x: [0, -10, 0], y: [0, 10, 0] }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute -top-24 -left-24 w-96 h-96 bg-primary/20 blur-3xl rounded-full"
+        />
+        <motion.div
+          initial={{ opacity: 0, x: 40, y: 40 }}
+          animate={{ opacity: 1, x: [0, 12, 0], y: [0, -12, 0] }}
+          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 0.6 }}
+          className="absolute -bottom-24 -right-24 w-[28rem] h-[28rem] bg-chart-2/20 blur-3xl rounded-full"
+        />
+        <div className="absolute inset-0 bg-[radial-gradient(transparent_1px,transparent_1px),radial-gradient(var(--border)_1px,transparent_1px)] [background-size:24px_24px] opacity-30" />
+      </div>
+
       {/* Navigation */}
       <motion.nav 
         initial={{ opacity: 0, y: -20 }}
@@ -148,21 +165,21 @@ export default function Landing() {
             >
               <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent rounded-2xl p-8 border border-border/50">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <Card className="border-0 shadow-lg">
+                  <Card className="border-0 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-white/30 dark:supports-[backdrop-filter]:bg-white/5 transition-transform hover:-translate-y-1">
                     <CardContent className="p-6 text-center">
                       <Activity className="h-8 w-8 text-primary mx-auto mb-3" />
                       <h3 className="font-semibold mb-2">Track Health</h3>
                       <p className="text-sm text-muted-foreground">Monitor vitals and biometrics</p>
                     </CardContent>
                   </Card>
-                  <Card className="border-0 shadow-lg">
+                  <Card className="border-0 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-white/30 dark:supports-[backdrop-filter]:bg-white/5 transition-transform hover:-translate-y-1">
                     <CardContent className="p-6 text-center">
                       <Zap className="h-8 w-8 text-primary mx-auto mb-3" />
                       <h3 className="font-semibold mb-2">AI Insights</h3>
                       <p className="text-sm text-muted-foreground">Get personalized recommendations</p>
                     </CardContent>
                   </Card>
-                  <Card className="border-0 shadow-lg">
+                  <Card className="border-0 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-white/30 dark:supports-[backdrop-filter]:bg-white/5 transition-transform hover:-translate-y-1">
                     <CardContent className="p-6 text-center">
                       <Shield className="h-8 w-8 text-primary mx-auto mb-3" />
                       <h3 className="font-semibold mb-2">Trusted Care</h3>
@@ -202,8 +219,10 @@ export default function Landing() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
                 viewport={{ once: true }}
+                whileHover={{ y: -6, scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
-                <Card className="h-full border-0 shadow-lg hover:shadow-xl transition-shadow duration-300">
+                <Card className="h-full border-0 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-white/30 dark:supports-[backdrop-filter]:bg-white/5 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
                   <CardContent className="p-8">
                     <feature.icon className="h-12 w-12 text-primary mb-6" />
                     <h3 className="text-xl font-semibold mb-4">{feature.title}</h3>
