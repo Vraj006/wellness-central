@@ -49,3 +49,20 @@ export const ensureRole = mutation({
     }
   },
 });
+
+export const setName = mutation({
+  args: {
+    name: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) {
+      throw new Error("Not authenticated");
+    }
+    const name = args.name.trim();
+    if (!name) {
+      throw new Error("Name cannot be empty");
+    }
+    await ctx.db.patch(user._id, { name });
+  },
+});

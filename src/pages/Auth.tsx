@@ -29,6 +29,7 @@ interface AuthProps {
 function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const { isLoading: authLoading, isAuthenticated, user, signIn } = useAuth();
   const ensureRole = useMutation(api.users.ensureRole);
+  const setNameMutation = useMutation(api.users.setName);
   const navigate = useNavigate();
   const [step, setStep] = useState<"signIn" | { email: string }>("signIn");
   const [otp, setOtp] = useState("");
@@ -36,6 +37,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const [error, setError] = useState<string | null>(null);
   // Add: auth mode selector (UI only; both paths use the same email OTP)
   const [authMode, setAuthMode] = useState<"login" | "register">("login");
+  const [name, setName] = useState("");
 
   // Add: track that we've ensured a role to avoid repeated calls
   const [roleEnsured, setRoleEnsured] = useState(false);
@@ -102,6 +104,16 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
 
       // Ensure a default role for newly verified users (patient by default)
       await ensureRole({ defaultRole: "patient" });
+
+      // If registering and name provided, set user's name
+      if (authMode === "register" && name.trim().length > 0) {
+        try {
+          await setNameMutation({ name: name.trim() });
+        } catch (e) {
+          console.error("Failed to save name:", e);
+          // do not block redirect if name save fails
+        }
+      }
 
       // Let the auth effect handle role-based navigation cleanly
       setIsLoading(false);
@@ -186,6 +198,21 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                         >
                           Register
                         </Button>
+                      </div>
+                      <div className="space-y-2 mb-4">
+                        {authMode === "register" && (
+                          <div className="relative">
+                            <Input
+                              name="name"
+                              placeholder="Your full name"
+                              type="text"
+                              value={name}
+                              onChange={(e) => setName(e.target.value)}
+                              disabled={isLoading}
+                              required
+                            />
+                          </div>
+                        )}
                       </div>
                       <div className="relative flex items-center gap-2">
                         <div className="relative flex-1">
