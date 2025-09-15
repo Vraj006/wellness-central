@@ -48,13 +48,6 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     );
   }
 
-  useEffect(() => {
-    if (!authLoading && isAuthenticated) {
-      const redirect = redirectAfterAuth || "/";
-      navigate(redirect);
-    }
-  }, [authLoading, isAuthenticated, navigate, redirectAfterAuth]);
-
   const handleEmailSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
