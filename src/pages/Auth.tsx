@@ -13,6 +13,7 @@ import {
   InputOTPGroup,
   InputOTPSlot,
 } from "@/components/ui/input-otp";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 import { useAuth } from "@/hooks/use-auth";
 import { ArrowRight, Loader2, Mail } from "lucide-react";
@@ -38,7 +39,8 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   // Add: auth mode selector (UI only; both paths use the same email OTP)
   const [authMode, setAuthMode] = useState<"login" | "register">("login");
   const [name, setName] = useState("");
-
+  // Add: role selection state for registration
+  const [selectedRole, setSelectedRole] = useState<"patient" | "provider">("patient");
   // Add: track that we've ensured a role to avoid repeated calls
   const [roleEnsured, setRoleEnsured] = useState(false);
 
@@ -102,8 +104,8 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       const formData = new FormData(event.currentTarget);
       await signIn("email-otp", formData);
 
-      // Ensure a default role for newly verified users (patient by default)
-      await ensureRole({ defaultRole: "patient" });
+      // Ensure role: use selected role from registration, otherwise ensure existing or default patient
+      await ensureRole({ defaultRole: selectedRole });
 
       // If registering and name provided, set user's name
       if (authMode === "register" && name.trim().length > 0) {
@@ -201,17 +203,36 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                       </div>
                       <div className="space-y-2 mb-4">
                         {authMode === "register" && (
-                          <div className="relative">
-                            <Input
-                              name="name"
-                              placeholder="Your full name"
-                              type="text"
-                              value={name}
-                              onChange={(e) => setName(e.target.value)}
-                              disabled={isLoading}
-                              required
-                            />
-                          </div>
+                          <>
+                            <div className="relative">
+                              <Input
+                                name="name"
+                                placeholder="Your full name"
+                                type="text"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                disabled={isLoading}
+                                required
+                              />
+                            </div>
+                            {/* Role selector (Register only) */}
+                            <div className="relative">
+                              <Select
+                                value={selectedRole}
+                                onValueChange={(val) =>
+                                  setSelectedRole(val as "patient" | "provider")
+                                }
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select role" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="patient">Patient</SelectItem>
+                                  <SelectItem value="provider">Provider</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </>
                         )}
                       </div>
                       <div className="relative flex items-center gap-2">
