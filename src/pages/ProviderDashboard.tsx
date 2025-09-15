@@ -14,7 +14,11 @@ export default function ProviderDashboard() {
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
   
-  const patients = useQuery(api.patients.getProviderPatients, {});
+  // Add guarded query enable flag
+  const enabled = !isLoading && !!user && user.role === "provider";
+  
+  // Guard query so it only runs when authenticated and role-appropriate
+  const patients = useQuery(api.patients.getProviderPatients, enabled ? {} : "skip");
 
   if (isLoading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;

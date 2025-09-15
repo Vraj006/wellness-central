@@ -14,9 +14,13 @@ export default function PatientDashboard() {
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
   
-  const biometrics = useQuery(api.biometrics.getUserBiometrics, {});
-  const latestBiometrics = useQuery(api.biometrics.getLatestBiometrics, {});
-  const recommendations = useQuery(api.recommendations.getUserRecommendations, {});
+  // Add guarded query enable flag
+  const enabled = !isLoading && !!user && user.role === "patient";
+
+  // Guard queries so they only run when authenticated and role-appropriate
+  const biometrics = useQuery(api.biometrics.getUserBiometrics, enabled ? {} : "skip");
+  const latestBiometrics = useQuery(api.biometrics.getLatestBiometrics, enabled ? {} : "skip");
+  const recommendations = useQuery(api.recommendations.getUserRecommendations, enabled ? {} : "skip");
 
   if (isLoading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
