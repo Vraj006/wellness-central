@@ -9,9 +9,12 @@ import { useAuth } from "@/hooks/use-auth";
 import { useMutation, useQuery } from "convex/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import axios from "axios";
+import { useNavigate } from "react-router";
 
 export default function PatientFormPage() {
   const { user, isLoading } = useAuth();
+  const navigate = useNavigate();
 
   // Patient intake mutations/queries
   const upsert = useMutation(api.patientInputs.upsertForCurrentUser);
@@ -91,6 +94,15 @@ export default function PatientFormPage() {
     }
   }, [existing]);
 
+  async function getPrediction(payload: any) {
+    try {
+      const response = await axios.post("http://127.0.0.1:8000/predict", payload);
+      return response.data; // expect shape with prediction
+    } catch (error) {
+      return { error: true, message: "Prediction service error" };
+    }
+  }
+
   const handleSavePatient = async () => {
     try {
       const payload = {
@@ -130,6 +142,29 @@ export default function PatientFormPage() {
       console.log("Patient Form Payload:", payload);
 
       await upsert(payload);
+
+      // Build prediction input from current form values
+      const predictionInput = {
+        Age: age ? Number(age) : undefined,
+        Gender: gender,
+        BMI: undefined, // optional: you may compute BMI if weight/height exists
+        Exercise: exercise,
+        Diet: diet,
+        Stress: stress,
+        Glucose: undefined,
+        Weight: undefined,
+        BP_sys: bSystolic ? Number(bSystolic) : undefined,
+        BP_dia: bDiastolic ? Number(bDiastolic) : undefined,
+        HR: undefined,
+        AirQuality: undefined,
+        Sleep: sleep,
+        Steps: activity || undefined,
+        disease: "P_T2D",
+      };
+
+      const prediction = await getPrediction(predictionInput);
+
+      navigate("/recommendations", { state: { prediction, form: predictionInput } });
       toast.success("Patient info saved");
     } catch {
       toast.error("Failed to save patient info");

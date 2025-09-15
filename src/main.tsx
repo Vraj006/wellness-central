@@ -22,6 +22,7 @@ import HealthMetricsPage from "@/pages/HealthMetrics.tsx";
 import PatientInputPage from "@/pages/PatientInput.tsx";
 import PatientFormPage from "@/pages/PatientForm.tsx";
 import DebugRolePage from "@/pages/DebugRole.tsx";
+import DebugUserPage from "@/pages/DebugUser.tsx";
 
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
 
@@ -72,6 +73,7 @@ createRoot(document.getElementById("root")!).render(
             <Route path="/patient-intake" element={<PatientInputPage />} />
             <Route path="/patient-form" element={<PatientFormPage />} />
             <Route path="/debug-role" element={<DebugRolePage />} />
+            <Route path="/debug-user" element={<DebugUserPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

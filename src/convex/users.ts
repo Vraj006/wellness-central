@@ -66,3 +66,15 @@ export const setName = mutation({
     await ctx.db.patch(user._id, { name });
   },
 });
+
+// Temporary query to check user data
+export const checkUser = query({
+  args: {},
+  handler: async (ctx) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) {
+      return { error: "Not authenticated" };
+    }
+    return { user };
+  },
+});

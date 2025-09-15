@@ -1,13 +1,14 @@
 // src/pages/recommendations.tsx
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRecommendation } from "@/hooks/useRecommendation";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useLocation } from "react-router";
 
 export default function RecommendationsPage() {
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<any>({
     HR: 72,
     weight: 70,
     bmi: 22.5,
@@ -19,15 +20,48 @@ export default function RecommendationsPage() {
     airquality: "good",
   });
 
+  const location = useLocation();
+  const navState = location.state as any;
+  const incomingPrediction = navState?.prediction;
+  const incomingForm = navState?.form;
+
   const { getRecommendation, recommendation, loading } = useRecommendation();
 
+  // Prepare a user-friendly prediction string
+  const predictionText = useMemo(() => {
+    if (!incomingPrediction) return null;
+    if (typeof incomingPrediction === "string") return incomingPrediction;
+    if (incomingPrediction?.prediction) return String(incomingPrediction.prediction);
+    return JSON.stringify(incomingPrediction);
+  }, [incomingPrediction]);
+
+  useEffect(() => {
+    if (incomingForm) {
+      // Normalize and auto-trigger recommendation using provided form
+      setForm((prev: any) => ({ ...prev, ...incomingForm }));
+      getRecommendation(incomingForm);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [incomingForm]);
+
   const handleChange = (field: string, value: any) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
+    setForm((prev: any) => ({ ...prev, [field]: value }));
   };
 
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-6">
       <h1 className="text-2xl font-bold">AI Health Recommendations</h1>
+
+      {predictionText && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Model Prediction</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-sm whitespace-pre-wrap">{predictionText}</div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
@@ -40,7 +74,7 @@ export default function RecommendationsPage() {
               <input
                 type="text"
                 className="border p-1 rounded"
-                value={form[key as keyof typeof form]}
+                value={form[key]}
                 onChange={(e) => handleChange(key, e.target.value)}
               />
             </div>

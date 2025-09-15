@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { getCurrentUser } from "./users";
+import { action } from "./_generated/server";
 
 export const createRecommendation = mutation({
   args: {
@@ -93,5 +94,24 @@ export const completeRecommendation = mutation({
     await ctx.db.patch(args.recommendationId, {
       completed: true,
     });
+  },
+});
+
+export const generateAiRecommendation = action({
+  args: {
+    input: v.any(),
+  },
+  handler: async (ctx, args) => {
+    // TODO: Call your LLaMA or OpenAI provider here. For now, return a stub.
+    const summary = `Based on your inputs, focus on: balanced diet, consistent sleep, and moderate exercise.`;
+    const bullets = [
+      "Aim for 150 minutes of moderate exercise per week.",
+      "Increase fiber intake with whole grains and vegetables.",
+      "Maintain 7–8 hours of sleep nightly and manage stress with mindfulness.",
+    ];
+    return {
+      recommendation: `Prediction-aware Guidance\n- ${bullets.join("\n- ")}`,
+      echo: args.input,
+    };
   },
 });
