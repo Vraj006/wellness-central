@@ -25,7 +25,7 @@ interface AuthProps {
 }
 
 function Auth({ redirectAfterAuth }: AuthProps = {}) {
-  const { isLoading: authLoading, isAuthenticated, signIn } = useAuth();
+  const { isLoading: authLoading, isAuthenticated, user, signIn } = useAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState<"signIn" | { email: string }>("signIn");
   const [otp, setOtp] = useState("");
@@ -33,11 +33,28 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!authLoading && isAuthenticated && user) {
+      const dashboard = user.role === "provider" ? "/dashboard/provider" : "/dashboard/patient";
+      navigate(dashboard);
+    }
+  }, [authLoading, isAuthenticated, user, navigate]);
+
+  // Show a minimal loader while auth state initializes to prevent flicker
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-6 w-6 animate-spin" />
+      </div>
+    );
+  }
+
+  useEffect(() => {
     if (!authLoading && isAuthenticated) {
       const redirect = redirectAfterAuth || "/";
       navigate(redirect);
     }
   }, [authLoading, isAuthenticated, navigate, redirectAfterAuth]);
+
   const handleEmailSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
@@ -66,10 +83,8 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       const formData = new FormData(event.currentTarget);
       await signIn("email-otp", formData);
 
-      console.log("signed in");
-
-      const redirect = redirectAfterAuth || "/";
-      navigate(redirect);
+      // Let the auth effect handle role-based navigation cleanly
+      setIsLoading(false);
     } catch (error) {
       console.error("OTP verification error:", error);
 
@@ -84,11 +99,9 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     setIsLoading(true);
     setError(null);
     try {
-      console.log("Attempting anonymous sign in...");
       await signIn("anonymous");
-      console.log("Anonymous sign in successful");
-      const redirect = redirectAfterAuth || "/";
-      navigate(redirect);
+      // Let the auth effect handle role-based navigation cleanly
+      setIsLoading(false);
     } catch (error) {
       console.error("Guest login error:", error);
       console.error("Error details:", JSON.stringify(error, null, 2));
