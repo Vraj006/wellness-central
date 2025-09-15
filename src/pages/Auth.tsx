@@ -19,6 +19,8 @@ import { ArrowRight, Loader2, Mail, UserX } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { motion } from "framer-motion";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
 
 interface AuthProps {
   redirectAfterAuth?: string;
@@ -26,6 +28,7 @@ interface AuthProps {
 
 function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const { isLoading: authLoading, isAuthenticated, user, signIn } = useAuth();
+  const ensureRole = useMutation(api.users.ensureRole);
   const navigate = useNavigate();
   const [step, setStep] = useState<"signIn" | { email: string }>("signIn");
   const [otp, setOtp] = useState("");
@@ -76,6 +79,9 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       const formData = new FormData(event.currentTarget);
       await signIn("email-otp", formData);
 
+      // Ensure a default role for newly verified users (patient by default)
+      await ensureRole({ defaultRole: "patient" });
+
       // Let the auth effect handle role-based navigation cleanly
       setIsLoading(false);
     } catch (error) {
@@ -93,6 +99,10 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     setError(null);
     try {
       await signIn("anonymous");
+
+      // Assign patient role to guest users so dashboards load without bouncing back
+      await ensureRole({ defaultRole: "patient" });
+
       // Let the auth effect handle role-based navigation cleanly
       setIsLoading(false);
     } catch (error) {
