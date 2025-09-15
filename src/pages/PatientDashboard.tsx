@@ -9,6 +9,7 @@ import { motion } from "framer-motion";
 import { Activity, Heart, Plus, TrendingUp } from "lucide-react";
 import { useQuery } from "convex/react";
 import { useNavigate } from "react-router";
+import { useEffect } from "react";
 
 export default function PatientDashboard() {
   const { user, isLoading } = useAuth();
@@ -22,12 +23,21 @@ export default function PatientDashboard() {
   const latestBiometrics = useQuery(api.biometrics.getLatestBiometrics, enabled ? {} : "skip");
   const recommendations = useQuery(api.recommendations.getUserRecommendations, enabled ? {} : "skip");
 
+  // Redirect unauthenticated or wrong-role users after render settles
+  // to prevent navigation during render warnings and flicker.
+  // This replaces the inline navigate() call in render.
+  // Add this effect:
+  useEffect(() => {
+    if (!isLoading && (!user || user.role !== "patient")) {
+      navigate("/auth", { replace: true });
+    }
+  }, [isLoading, user, navigate]);
+
   if (isLoading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
 
   if (!user || user.role !== "patient") {
-    navigate("/auth");
     return null;
   }
 
@@ -46,7 +56,9 @@ export default function PatientDashboard() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <h1 className="text-3xl font-bold tracking-tight">Welcome back, {user.name || "Patient"}</h1>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Welcome back, {user.name || (user.email ? user.email.split("@")[0] : "User")}
+            </h1>
             <p className="text-muted-foreground">Here's your wellness overview for today</p>
           </motion.div>
 

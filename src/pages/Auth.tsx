@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/input-otp";
 
 import { useAuth } from "@/hooks/use-auth";
-import { ArrowRight, Loader2, Mail, UserX } from "lucide-react";
+import { ArrowRight, Loader2, Mail } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { motion } from "framer-motion";
@@ -34,13 +34,34 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const [otp, setOtp] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Add: auth mode selector (UI only; both paths use the same email OTP)
+  const [authMode, setAuthMode] = useState<"login" | "register">("login");
 
+  // Add: track that we've ensured a role to avoid repeated calls
+  const [roleEnsured, setRoleEnsured] = useState(false);
+
+  // Ensure a default role exists when authenticated but missing role (avoid loops)
   useEffect(() => {
-    if (!authLoading && isAuthenticated && user) {
+    if (!authLoading && isAuthenticated && user && !user.role && !roleEnsured) {
+      (async () => {
+        try {
+          await ensureRole({ defaultRole: "patient" });
+          setRoleEnsured(true);
+        } catch (e) {
+          // do not block UX; stay on auth until role exists or user retries
+          console.error("ensureRole on mount failed:", e);
+        }
+      })();
+    }
+  }, [authLoading, isAuthenticated, user, roleEnsured, ensureRole]);
+
+  // Redirect ONLY when role is present to prevent bouncing
+  useEffect(() => {
+    if (!authLoading && isAuthenticated && user && user.role) {
       const dashboard = user.role === "provider" ? "/dashboard/provider" : "/dashboard/patient";
       navigate(dashboard);
     }
-  }, [authLoading, isAuthenticated, user, navigate]);
+  }, [authLoading, isAuthenticated, user?.role, navigate]);
 
   // Show a minimal loader while auth state initializes to prevent flicker
   if (authLoading) {
@@ -94,25 +115,6 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     }
   };
 
-  const handleGuestLogin = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      await signIn("anonymous");
-
-      // Assign patient role to guest users so dashboards load without bouncing back
-      await ensureRole({ defaultRole: "patient" });
-
-      // Let the auth effect handle role-based navigation cleanly
-      setIsLoading(false);
-    } catch (error) {
-      console.error("Guest login error:", error);
-      console.error("Error details:", JSON.stringify(error, null, 2));
-      setError(`Failed to sign in as guest: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      setIsLoading(false);
-    }
-  };
-
   return (
     <div className="relative min-h-screen flex flex-col overflow-hidden">
       {/* Animated background */}
@@ -155,13 +157,36 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                         onClick={() => navigate("/")}
                       />
                     </div>
-                    <CardTitle className="text-xl">Get Started</CardTitle>
+                    <CardTitle className="text-xl">
+                      {authMode === "login" ? "Login" : "Create your account"}
+                    </CardTitle>
                     <CardDescription>
-                      Enter your email to log in or sign up
+                      Enter your email to receive a verification code
                     </CardDescription>
                   </CardHeader>
                   <form onSubmit={handleEmailSubmit}>
                     <CardContent>
+                      {/* Login / Register selector */}
+                      <div className="flex items-center justify-center gap-2 mb-4">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant={authMode === "login" ? "default" : "outline"}
+                          onClick={() => setAuthMode("login")}
+                          disabled={isLoading}
+                        >
+                          Login
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant={authMode === "register" ? "default" : "outline"}
+                          onClick={() => setAuthMode("register")}
+                          disabled={isLoading}
+                        >
+                          Register
+                        </Button>
+                      </div>
                       <div className="relative flex items-center gap-2">
                         <div className="relative flex-1">
                           <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -190,28 +215,6 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                       {error && (
                         <p className="mt-2 text-sm text-red-500">{error}</p>
                       )}
-                      <div className="mt-4">
-                        <div className="relative">
-                          <div className="absolute inset-0 flex items-center">
-                            <span className="w-full border-t" />
-                          </div>
-                          <div className="relative flex justify-center text-xs uppercase">
-                            <span className="bg-background px-2 text-muted-foreground">
-                              Or
-                            </span>
-                          </div>
-                        </div>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          className="w-full mt-4"
-                          onClick={handleGuestLogin}
-                          disabled={isLoading}
-                        >
-                          <UserX className="mr-2 h-4 w-4" />
-                          Continue as Guest
-                        </Button>
-                      </div>
                     </CardContent>
                   </form>
                 </>

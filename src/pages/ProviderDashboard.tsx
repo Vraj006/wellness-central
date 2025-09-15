@@ -9,23 +9,33 @@ import { motion } from "framer-motion";
 import { Activity, AlertTriangle, TrendingUp, Users } from "lucide-react";
 import { useQuery } from "convex/react";
 import { useNavigate } from "react-router";
+import { useEffect } from "react";
 
 export default function ProviderDashboard() {
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
-  
+
   // Add guarded query enable flag
   const enabled = !isLoading && !!user && user.role === "provider";
-  
+
   // Guard query so it only runs when authenticated and role-appropriate
   const patients = useQuery(api.patients.getProviderPatients, enabled ? {} : "skip");
+
+  // Redirect unauthenticated or wrong-role users after render settles
+  // to prevent navigation during render warnings and flicker.
+  // This replaces the inline navigate() call in render.
+  // useEffect is imported at the top-level
+  useEffect(() => {
+    if (!isLoading && (!user || user.role !== "provider")) {
+      navigate("/auth", { replace: true });
+    }
+  }, [isLoading, user, navigate]);
 
   if (isLoading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
 
   if (!user || user.role !== "provider") {
-    navigate("/auth");
     return null;
   }
 
