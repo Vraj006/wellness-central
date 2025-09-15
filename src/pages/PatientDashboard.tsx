@@ -1,4 +1,3 @@
-import { BiometricChart } from "@/components/BiometricChart";
 import { RecommendationCard } from "@/components/RecommendationCard";
 import { Sidebar } from "@/components/Sidebar";
 import { Button } from "@/components/ui/button";
@@ -19,7 +18,6 @@ export default function PatientDashboard() {
   const enabled = !isLoading && !!user && user.role === "patient";
 
   // Guard queries so they only run when authenticated and role-appropriate
-  const biometrics = useQuery(api.biometrics.getUserBiometrics, enabled ? {} : "skip");
   const latestBiometrics = useQuery(api.biometrics.getLatestBiometrics, enabled ? {} : "skip");
   const recommendations = useQuery(api.recommendations.getUserRecommendations, enabled ? {} : "skip");
 
@@ -28,8 +26,15 @@ export default function PatientDashboard() {
   // This replaces the inline navigate() call in render.
   // Add this effect:
   useEffect(() => {
-    if (!isLoading && (!user || user.role !== "patient")) {
-      navigate("/auth", { replace: true });
+    if (!isLoading) {
+      if (!user) {
+        navigate("/auth", { replace: true });
+        return;
+      }
+      // Only redirect when role is known and not patient
+      if (user.role && user.role !== "patient") {
+        navigate("/auth", { replace: true });
+      }
     }
   }, [isLoading, user, navigate]);
 
@@ -152,50 +157,33 @@ export default function PatientDashboard() {
 
           {/* Charts and Recommendations */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Biometric Charts */}
+            {/* Left Column replaced with Patient Form CTA */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold">Health Trends</h2>
+                <h2 className="text-xl font-semibold">Patient Form</h2>
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => navigate("/biometrics")}
+                  onClick={() => navigate("/patient-form")}
                 >
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Reading
+                  Open Form
                 </Button>
               </div>
-              
-              {biometrics && biometrics.length > 0 ? (
-                <div className="grid gap-4">
-                  <BiometricChart
-                    data={biometrics}
-                    type="glucose"
-                    title="Blood Glucose"
-                    color="#3b82f6"
-                  />
-                  <BiometricChart
-                    data={biometrics}
-                    type="bloodPressure"
-                    title="Blood Pressure"
-                    color="#ef4444"
-                  />
-                </div>
-              ) : (
-                <Card>
-                  <CardContent className="flex flex-col items-center justify-center py-12">
-                    <Activity className="h-12 w-12 text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-medium mb-2">No biometric data yet</h3>
-                    <p className="text-muted-foreground text-center mb-4">
-                      Start tracking your health by adding your first biometric reading
-                    </p>
-                    <Button onClick={() => navigate("/biometrics")}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add First Reading
-                    </Button>
-                  </CardContent>
-                </Card>
-              )}
+
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <Activity className="h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium mb-2">Manage your details and biometrics</h3>
+                  <p className="text-muted-foreground text-center mb-4">
+                    Use the Patient Form to update personal info and add biometric readings.
+                  </p>
+                  <Button onClick={() => navigate("/patient-form")}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Go to Patient Form
+                  </Button>
+                </CardContent>
+              </Card>
             </div>
 
             {/* Recommendations */}

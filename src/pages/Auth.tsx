@@ -39,27 +39,22 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   // Add: auth mode selector (UI only; both paths use the same email OTP)
   const [authMode, setAuthMode] = useState<"login" | "register">("login");
   const [name, setName] = useState("");
-  // Add: role selection state for both login and registration
-  const [selectedRole, setSelectedRole] = useState<"patient" | "provider">("patient");
+  // Initialize selected role synchronously to avoid redirect race
+  const [selectedRole, setSelectedRole] = useState<"patient" | "provider">(() => {
+    const savedRole = sessionStorage.getItem("auth_selected_role");
+    return savedRole === "provider" ? "provider" : "patient";
+  });
   // Add: track that we've ensured a role to avoid repeated calls
   const [roleEnsured, setRoleEnsured] = useState(false);
   // Add: prevent double navigation and ensure a single redirect path
   const [hasNavigated, setHasNavigated] = useState(false);
-
-  // Persist selected role across re-mounts (especially after OTP sign-in)
-  useEffect(() => {
-    const savedRole = sessionStorage.getItem("auth_selected_role");
-    if (savedRole === "patient" || savedRole === "provider") {
-      setSelectedRole(savedRole);
-    }
-  }, []);
 
   // Ensure a default role exists when authenticated but missing role (avoid loops)
   useEffect(() => {
     if (!authLoading && isAuthenticated && user && !user.role && !roleEnsured) {
       (async () => {
         try {
-          await ensureRole({ defaultRole: "patient" });
+          await ensureRole({ defaultRole: selectedRole });
           setRoleEnsured(true);
         } catch (e) {
           // do not block UX; stay on auth until role exists or user retries
@@ -67,27 +62,22 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
         }
       })();
     }
-  }, [authLoading, isAuthenticated, user, roleEnsured, ensureRole]);
+  }, [authLoading, isAuthenticated, user, roleEnsured, ensureRole, selectedRole]);
 
-  // Redirect ONLY when role is present to prevent bouncing
+  // Redirect ONLY when role is known or ensured to prevent bouncing
   useEffect(() => {
     if (hasNavigated) return;
     if (!authLoading && isAuthenticated && user) {
-      // If logging in, respect the selected role for redirect without changing stored role
-      if (authMode === "login") {
-        const dashboard = selectedRole === "provider" ? "/dashboard/provider" : "/dashboard/patient";
-        navigate(dashboard);
-        setHasNavigated(true);
+      if (!user.role && !roleEnsured) {
+        // Wait until role is ensured
         return;
       }
-      // Default path: respect user's stored role (e.g., after registration)
-      if (user.role) {
-        const dashboard = user.role === "provider" ? "/dashboard/provider" : "/dashboard/patient";
-        navigate(dashboard);
-        setHasNavigated(true);
-      }
+      const effectiveRole = user.role || selectedRole;
+      const dashboard = effectiveRole === "provider" ? "/dashboard/provider" : "/dashboard/patient";
+      navigate(dashboard, { replace: true });
+      setHasNavigated(true);
     }
-  }, [authLoading, isAuthenticated, user, authMode, selectedRole, navigate, hasNavigated]);
+  }, [authLoading, isAuthenticated, user, selectedRole, roleEnsured, navigate, hasNavigated]);
 
   // Show a minimal loader while auth state initializes to prevent flicker
   if (authLoading) {

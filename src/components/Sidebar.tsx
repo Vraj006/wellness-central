@@ -25,7 +25,7 @@ export function Sidebar({ className }: SidebarProps) {
 
   const patientNavItems = [
     { icon: Home, label: "Dashboard", path: "/dashboard/patient" },
-    { icon: Activity, label: "Biometrics", path: "/biometrics" },
+    { icon: Activity, label: "Patient-form", path: "/patient-form" },
     { icon: Heart, label: "Recommendations", path: "/recommendations" },
     { icon: User, label: "Profile", path: "/profile" },
   ];

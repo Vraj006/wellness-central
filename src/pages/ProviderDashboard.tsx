@@ -26,8 +26,15 @@ export default function ProviderDashboard() {
   // This replaces the inline navigate() call in render.
   // useEffect is imported at the top-level
   useEffect(() => {
-    if (!isLoading && (!user || user.role !== "provider")) {
-      navigate("/auth", { replace: true });
+    if (!isLoading) {
+      if (!user) {
+        navigate("/auth", { replace: true });
+        return;
+      }
+      // Only redirect when role is known and not provider
+      if (user.role && user.role !== "provider") {
+        navigate("/auth", { replace: true });
+      }
     }
   }, [isLoading, user, navigate]);
 
