@@ -46,6 +46,14 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   // Add: prevent double navigation and ensure a single redirect path
   const [hasNavigated, setHasNavigated] = useState(false);
 
+  // Persist selected role across re-mounts (especially after OTP sign-in)
+  useEffect(() => {
+    const savedRole = sessionStorage.getItem("auth_selected_role");
+    if (savedRole === "patient" || savedRole === "provider") {
+      setSelectedRole(savedRole);
+    }
+  }, []);
+
   // Ensure a default role exists when authenticated but missing role (avoid loops)
   useEffect(() => {
     if (!authLoading && isAuthenticated && user && !user.role && !roleEnsured) {
@@ -96,6 +104,8 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     setError(null);
     try {
       const formData = new FormData(event.currentTarget);
+      // Persist role choice for login so it's available after OTP
+      sessionStorage.setItem("auth_selected_role", selectedRole);
       await signIn("email-otp", formData);
       setStep({ email: formData.get("email") as string });
       setIsLoading(false);
@@ -128,8 +138,16 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
             console.error("Failed to save name:", e);
           }
         }
+      } else {
+        // Login: Immediately route based on selectedRole to avoid any race conditions
+        const roleFromStorage = sessionStorage.getItem("auth_selected_role");
+        const roleToUse = roleFromStorage === "provider" ? "provider" : "patient";
+        const dashboard = roleToUse === "provider" ? "/dashboard/provider" : "/dashboard/patient";
+        if (!hasNavigated) {
+          navigate(dashboard);
+          setHasNavigated(true);
+        }
       }
-      // Login: do not modify stored role; redirect handled by effect using selectedRole
 
       setIsLoading(false);
     } catch (error) {
@@ -234,9 +252,11 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                         <div className="relative">
                           <Select
                             value={selectedRole}
-                            onValueChange={(val) =>
-                              setSelectedRole(val as "patient" | "provider")
-                            }
+                            onValueChange={(val) => {
+                              const role = val as "patient" | "provider";
+                              setSelectedRole(role);
+                              sessionStorage.setItem("auth_selected_role", role);
+                            }}
                           >
                             <SelectTrigger>
                               <SelectValue placeholder="Select role" />
