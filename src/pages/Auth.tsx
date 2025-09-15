@@ -39,10 +39,12 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   // Add: auth mode selector (UI only; both paths use the same email OTP)
   const [authMode, setAuthMode] = useState<"login" | "register">("login");
   const [name, setName] = useState("");
-  // Add: role selection state for registration
+  // Add: role selection state for both login and registration
   const [selectedRole, setSelectedRole] = useState<"patient" | "provider">("patient");
   // Add: track that we've ensured a role to avoid repeated calls
   const [roleEnsured, setRoleEnsured] = useState(false);
+  // Add: prevent double navigation and ensure a single redirect path
+  const [hasNavigated, setHasNavigated] = useState(false);
 
   // Ensure a default role exists when authenticated but missing role (avoid loops)
   useEffect(() => {
@@ -61,11 +63,23 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
 
   // Redirect ONLY when role is present to prevent bouncing
   useEffect(() => {
-    if (!authLoading && isAuthenticated && user && user.role) {
-      const dashboard = user.role === "provider" ? "/dashboard/provider" : "/dashboard/patient";
-      navigate(dashboard);
+    if (hasNavigated) return;
+    if (!authLoading && isAuthenticated && user) {
+      // If logging in, respect the selected role for redirect without changing stored role
+      if (authMode === "login") {
+        const dashboard = selectedRole === "provider" ? "/dashboard/provider" : "/dashboard/patient";
+        navigate(dashboard);
+        setHasNavigated(true);
+        return;
+      }
+      // Default path: respect user's stored role (e.g., after registration)
+      if (user.role) {
+        const dashboard = user.role === "provider" ? "/dashboard/provider" : "/dashboard/patient";
+        navigate(dashboard);
+        setHasNavigated(true);
+      }
     }
-  }, [authLoading, isAuthenticated, user?.role, navigate]);
+  }, [authLoading, isAuthenticated, user, authMode, selectedRole, navigate, hasNavigated]);
 
   // Show a minimal loader while auth state initializes to prevent flicker
   if (authLoading) {
@@ -104,20 +118,19 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       const formData = new FormData(event.currentTarget);
       await signIn("email-otp", formData);
 
-      // Ensure role: use selected role from registration, otherwise ensure existing or default patient
-      await ensureRole({ defaultRole: selectedRole });
-
-      // If registering and name provided, set user's name
-      if (authMode === "register" && name.trim().length > 0) {
-        try {
-          await setNameMutation({ name: name.trim() });
-        } catch (e) {
-          console.error("Failed to save name:", e);
-          // do not block redirect if name save fails
+      // Registration: persist role + name
+      if (authMode === "register") {
+        await ensureRole({ defaultRole: selectedRole });
+        if (name.trim().length > 0) {
+          try {
+            await setNameMutation({ name: name.trim() });
+          } catch (e) {
+            console.error("Failed to save name:", e);
+          }
         }
       }
+      // Login: do not modify stored role; redirect handled by effect using selectedRole
 
-      // Let the auth effect handle role-based navigation cleanly
       setIsLoading(false);
     } catch (error) {
       console.error("OTP verification error:", error);
@@ -215,25 +228,25 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                                 required
                               />
                             </div>
-                            {/* Role selector (Register only) */}
-                            <div className="relative">
-                              <Select
-                                value={selectedRole}
-                                onValueChange={(val) =>
-                                  setSelectedRole(val as "patient" | "provider")
-                                }
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select role" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="patient">Patient</SelectItem>
-                                  <SelectItem value="provider">Provider</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
                           </>
                         )}
+                        {/* Role selector (Shown for both Login and Register) */}
+                        <div className="relative">
+                          <Select
+                            value={selectedRole}
+                            onValueChange={(val) =>
+                              setSelectedRole(val as "patient" | "provider")
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select role" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="patient">Patient</SelectItem>
+                              <SelectItem value="provider">Provider</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
                       <div className="relative flex items-center gap-2">
                         <div className="relative flex-1">
