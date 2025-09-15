@@ -13,6 +13,13 @@ import NotFound from "./pages/NotFound.tsx";
 import "./types/global.d.ts";
 import PatientDashboard from "@/pages/PatientDashboard.tsx";
 import ProviderDashboard from "@/pages/ProviderDashboard.tsx";
+import BiometricsPage from "@/pages/Biometrics.tsx";
+import RecommendationsPage from "@/pages/Recommendations.tsx";
+import ProfilePage from "@/pages/Profile.tsx";
+import TrendsPage from "@/pages/Trends.tsx";
+import SettingsPage from "@/pages/Settings.tsx";
+import HealthMetricsPage from "@/pages/HealthMetrics.tsx";
+import PatientInputPage from "@/pages/PatientInput.tsx";
 
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
 
@@ -54,6 +61,13 @@ createRoot(document.getElementById("root")!).render(
             <Route path="/auth" element={<AuthPage redirectAfterAuth="/dashboard/patient" />} />
             <Route path="/dashboard/patient" element={<PatientDashboard />} />
             <Route path="/dashboard/provider" element={<ProviderDashboard />} />
+            <Route path="/biometrics" element={<BiometricsPage />} />
+            <Route path="/trends" element={<TrendsPage />} />
+            <Route path="/recommendations" element={<RecommendationsPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/health-metrics" element={<HealthMetricsPage />} />
+            <Route path="/patient-intake" element={<PatientInputPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

@@ -70,3 +70,42 @@ export const seedTestData = mutation({
     return "Test data seeded successfully";
   },
 });
+
+export const assignRandomProviderForCurrentPatient = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) throw new Error("Not authenticated");
+    if (user.role !== "patient") return "Only patients can be assigned providers.";
+
+    // Pick a random provider user
+    const providers = await ctx.db
+      .query("users")
+      .withIndex("email", (q) => q.gt("email", "")) // leverage existing email index to iterate
+      .collect();
+
+    const providerPool = providers.filter((u) => u.role === "provider");
+    if (providerPool.length === 0) return "No providers found to assign.";
+
+    const random = providerPool[Math.floor(Math.random() * providerPool.length)];
+
+    // Check existing relationship
+    const existing = await ctx.db
+      .query("patientProviders")
+      .withIndex("by_patient_and_provider", (q) =>
+        q.eq("patientId", user._id).eq("providerId", random._id)
+      )
+      .first();
+
+    if (!existing) {
+      await ctx.db.insert("patientProviders", {
+        patientId: user._id,
+        providerId: random._id,
+        relationship: "primary",
+        active: true,
+      });
+    }
+
+    return "Provider assigned.";
+  },
+});

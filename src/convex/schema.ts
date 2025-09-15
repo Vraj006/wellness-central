@@ -114,6 +114,62 @@ const schema = defineSchema(
       .index("by_patient", ["patientId"])
       .index("by_provider", ["providerId"])
       .index("by_patient_and_provider", ["patientId", "providerId"]),
+
+    // Provider details (extra profile for providers)
+    providerDetails: defineTable({
+      userId: v.id("users"),
+      specialty: v.optional(v.string()),
+      clinicName: v.optional(v.string()),
+      yearsExperience: v.optional(v.number()),
+      bio: v.optional(v.string()),
+      contactPhone: v.optional(v.string()),
+    }).index("by_user", ["userId"]),
+
+    // Patient intake inputs (high-level categories)
+    patientInputs: defineTable({
+      userId: v.id("users"),
+      personalInfo: v.optional(
+        v.object({
+          name: v.optional(v.string()),
+          age: v.optional(v.number()),
+          gender: v.optional(v.string()),
+          location: v.optional(v.string()),
+        })
+      ),
+      medicalHistory: v.optional(v.array(v.string())),
+      medications: v.optional(
+        v.array(
+          v.object({
+            name: v.string(),
+            dosage: v.optional(v.string()),
+            frequency: v.optional(v.string()),
+            sideEffects: v.optional(v.string()),
+          })
+        )
+      ),
+      lifestyle: v.optional(
+        v.object({
+          exerciseRoutines: v.optional(v.string()),
+          sleepPatterns: v.optional(v.string()),
+          dietHabits: v.optional(v.string()),
+          stressLevels: v.optional(v.string()),
+        })
+      ),
+      activityData: v.optional(
+        v.object({
+          stepCount: v.optional(v.number()),
+          caloriesBurned: v.optional(v.number()),
+          wearableInputs: v.optional(v.string()),
+        })
+      ),
+      environmentalFactors: v.optional(
+        v.object({
+          seasonalAllergies: v.optional(v.string()),
+          airQuality: v.optional(v.string()),
+          other: v.optional(v.string()),
+        })
+      ),
+    }).index("by_user", ["userId"]),
   },
   {
     schemaValidation: false,

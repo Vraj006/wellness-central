@@ -55,7 +55,9 @@ export default function ProviderDashboard() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <h1 className="text-3xl font-bold tracking-tight">Provider Dashboard</h1>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Welcome back, {user.name || (user.email ? user.email.split("@")[0] : "Provider")}
+            </h1>
             <p className="text-muted-foreground">Monitor your patients' health and wellness progress</p>
           </motion.div>
 

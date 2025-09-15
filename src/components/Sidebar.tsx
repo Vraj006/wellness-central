@@ -103,7 +103,7 @@ export function Sidebar({ className }: SidebarProps) {
           variant="ghost"
           size="sm"
           className="w-full justify-start gap-3"
-          onClick={() => navigate("/profile")}
+          onClick={() => navigate("/settings")}
         >
           <Settings className="h-4 w-4" />
           Settings
